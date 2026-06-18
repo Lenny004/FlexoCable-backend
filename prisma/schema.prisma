@@ -232,7 +232,9 @@ model CashSession {
   orders   Order[]
   payments Payment[]
 
-  @@unique([employeeId, cashRegisterCode], name: "UqCashSessionOpenPerRegister")
+  // La regla real es parcial: una sola sesion ABIERTA por empleado/caja.
+  // Prisma no modela indices parciales; debe crearse con SQL raw en migracion.
+  @@index([employeeId, cashRegisterCode], map: "IdxCashSessionEmployeeRegister")
   @@index([status], map: "IdxCashSessionStatus")
   @@index([openedAt], map: "IdxCashSessionOpened")
   @@map("CashSessions")
@@ -339,7 +341,7 @@ model InventoryMovement {
   @@index([orderId], map: "IdxInvMovOrder")
   @@index([purchaseOrderId], map: "IdxInvMovPO")
   @@map("InventoryMovements")
-  @@schema("sales")
+  @@schema("public")
 }
 
 // =============================================================================
@@ -1066,10 +1068,9 @@ model IsrDeclaration {
 // =============================================================================
 
 model Setting {
-  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  key         String   @unique @db.VarChar(100)
-  value       String   @db.Text
-  description String?  @db.VarChar(300)
+  key         String   @id @map("Key") @db.VarChar(100)
+  value       String   @map("Value") @db.Text
+  description String?  @map("Description") @db.VarChar(300)
   /// Si es true, puede exponerse en la API pública sin autenticación
   isPublic    Boolean  @default(false) @map("IsPublic")
   updatedAt   DateTime @default(now()) @map("UpdatedAt") @db.Timestamptz
